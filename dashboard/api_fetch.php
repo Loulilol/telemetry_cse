@@ -75,6 +75,7 @@ if ($azureBlobUrl !== '' && $azureSasToken !== '') {
     $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
+    // TEMPORARY FUNCTIONNALITY TO BE REMOVED LATER 
     if ($status < 200 || $status >= 300) {
         // Azure upload failed, save locally for debugging and history
         $storagePath = __DIR__ . '/storage';
