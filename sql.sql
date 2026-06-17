@@ -1,7 +1,7 @@
-create database picturegallery;
+create database telemetry;
 
 
-use picturegallery;
+use telemetry;
 
 
 CREATE TABLE `users` (
