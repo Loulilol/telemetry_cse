@@ -31,6 +31,13 @@ include '../includes/navbar.html';
 
 $settingsPath = __DIR__ . '/settings.json';
 $settings = [];
+
+// Ensure directory exists and is writable
+$settingsDir = dirname($settingsPath);
+if (!is_dir($settingsDir)) {
+    @mkdir($settingsDir, 0777, true);
+}
+
 // Load existing settings if present
 if (file_exists($settingsPath)) {
     $settings = json_decode(file_get_contents($settingsPath), true);
@@ -47,11 +54,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $settings['poll_interval'] = max(10, (int) ($_POST['poll_interval'] ?? 60));
     $settings['azure_blob_url'] = trim($_POST['azure_blob_url'] ?? '');
     $settings['azure_sas_token'] = trim($_POST['azure_sas_token'] ?? '');
-    // Persist as pretty-printed JSON for easy manual editing in dev
-    $bytesWritten = file_put_contents($settingsPath, json_encode($settings, JSON_PRETTY_PRINT));
+    
+    // Try to save the file
+    $bytesWritten = @file_put_contents($settingsPath, json_encode($settings, JSON_PRETTY_PRINT));
+    
     if ($bytesWritten === false) {
-        $error = "Failed to save settings. Check file permissions for " . dirname($settingsPath);
+        // If write failed, try to make the file writable and retry
+        if (file_exists($settingsPath)) {
+            @chmod($settingsPath, 0666);
+            $bytesWritten = @file_put_contents($settingsPath, json_encode($settings, JSON_PRETTY_PRINT));
+        }
+        
+        if ($bytesWritten === false) {
+            $error = "Cannot write to settings file. Please ensure the web server has write permissions to the dashboard directory, or contact your administrator.";
+        } else {
+            $success = true;
+        }
     } else {
+        // Make file readable by web server
+        @chmod($settingsPath, 0666);
         $success = true;
     }
 }
